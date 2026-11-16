@@ -1,7 +1,17 @@
 from flask import Flask, render_template, request, jsonify, session
 from flask_cors import CORS
-import os, json, re
-import google.generativeai as genai
+import os, json, re, warnings
+import pandas as pd
+
+warnings.filterwarnings("ignore", category=FutureWarning)
+
+try:
+    import google.generativeai as genai
+    HAS_GENAI = True
+except ImportError:
+    genai = None
+    HAS_GENAI = False
+
 from weather_predictor import (
     load_and_preprocess_data,
     train_model,
@@ -10,7 +20,6 @@ from weather_predictor import (
     normalize_city_name,
     get_available_cities,
 )
-import pandas as pd
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -31,16 +40,21 @@ except ImportError:
     pass
 
 api_key = os.getenv("GENAI_API_KEY", "AIzaSyCQx08C1YOYiw7Q8AaBxChwmIng02LSi4Q")
-if api_key:
-    genai.configure(api_key=api_key)
-
-try:
-    chat_model = genai.GenerativeModel("gemini-2.5-flash")
-except Exception:
+if HAS_GENAI and api_key:
     try:
-        chat_model = genai.GenerativeModel("gemini-1.5-flash")
+        genai.configure(api_key=api_key)
+    except Exception as e:
+        print(f"Warning: Gemini AI configuration failed: {e}")
+
+chat_model = None
+if HAS_GENAI and api_key:
+    try:
+        chat_model = genai.GenerativeModel("gemini-2.5-flash")
     except Exception:
-        chat_model = None
+        try:
+            chat_model = genai.GenerativeModel("gemini-1.5-flash")
+        except Exception:
+            chat_model = None
 
 @app.route("/")
 def index():
@@ -78,7 +92,8 @@ def chat():
     if "last_forecast" not in session:
         session["last_forecast"] = None
 
-    user_input = request.json.get("message", "").strip()
+    data = request.get_json(silent=True) or {}
+    user_input = data.get("message", "").strip()
     if not user_input:
         return jsonify({"reply": "Please type something!"})
 
@@ -159,8 +174,18 @@ def chat():
                 has_precip, precip_key_used, df_t2m=df_t2m, df_tp=df_tp
             )
 
-            temp = float(forecast_context_temp[target_date])
-            precip = float(forecast_context_precip[target_date]) if has_precip and forecast_context_precip is not None else 0.0
+            if target_date in forecast_context_temp.index:
+                temp = float(forecast_context_temp.loc[target_date])
+            else:
+                temp = float(forecast_context_temp.iloc[-1])
+
+            if has_precip and forecast_context_precip is not None:
+                if target_date in forecast_context_precip.index:
+                    precip = float(forecast_context_precip.loc[target_date])
+                else:
+                    precip = float(forecast_context_precip.iloc[-1])
+            else:
+                precip = 0.0
 
             if temp >= 35: feeling = "It will feel very hot."
             elif temp >= 28: feeling = "It will feel warm."
@@ -208,7 +233,7 @@ def chat():
 
 @app.route("/predict", methods=["POST"])
 def predict_weather():
-    data = request.get_json() or {}
+    data = request.get_json(silent=True) or {}
     city_name = data.get("city", "").strip()
     target_date_str = data.get("date", "").strip()
 
@@ -233,8 +258,18 @@ def predict_weather():
             has_precip, precip_key_used, df_t2m=df_t2m, df_tp=df_tp
         )
 
-        temp = float(forecast_context_temp[target_date])
-        precip = float(forecast_context_precip[target_date]) if has_precip and forecast_context_precip is not None else 0.0
+        if target_date in forecast_context_temp.index:
+            temp = float(forecast_context_temp.loc[target_date])
+        else:
+            temp = float(forecast_context_temp.iloc[-1])
+
+        if has_precip and forecast_context_precip is not None:
+            if target_date in forecast_context_precip.index:
+                precip = float(forecast_context_precip.loc[target_date])
+            else:
+                precip = float(forecast_context_precip.iloc[-1])
+        else:
+            precip = 0.0
 
         will_rain, rain_details = will_it_rain(precip, temp, target_date, has_precip)
 
