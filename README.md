@@ -250,4 +250,3 @@ python scripts/fetch_nasa_data.py --lat 28.61 --lon 77.20 --start 19850101 --end
 - **Team The Crucibles**
 - Built for the **NASA International Space Apps Challenge 2025** (First Hackathon Milestone 🚀)
 - Data provided by the **[NASA POWER Project](https://power.larc.nasa.gov/)** (Prediction of Worldwide Energy Resources)
-- Author GitHub: [Pshashanka19-afk](https://github.com/Pshashanka19-afk)
