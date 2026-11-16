@@ -1,3 +1,8 @@
+"""
+Weather Foreseen - Flask Application Server
+Team The Crucibles | NASA International Space Apps Challenge 2025
+"""
+
 from flask import Flask, render_template, request, jsonify, session
 from flask_cors import CORS
 import os, json, re, warnings
