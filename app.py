@@ -44,7 +44,11 @@ try:
 except ImportError:
     pass
 
-api_key = os.getenv("GENAI_API_KEY", "AIzaSyCQx08C1YOYiw7Q8AaBxChwmIng02LSi4Q")
+api_key = os.getenv("GENAI_API_KEY", "")
+# Ignore revoked / dummy placeholder key if present
+if api_key == "AIzaSyCQx08C1YOYiw7Q8AaBxChwmIng02LSi4Q":
+    api_key = ""
+
 if HAS_GENAI and api_key:
     try:
         genai.configure(api_key=api_key)
@@ -60,6 +64,94 @@ if HAS_GENAI and api_key:
             chat_model = genai.GenerativeModel("gemini-1.5-flash")
         except Exception:
             chat_model = None
+
+# City aliases dictionary for robust NLP matching
+CITY_ALIASES = {
+    "bengaluru": "bengaluru", "bangalore": "bengaluru",
+    "delhi": "delhi", "new delhi": "delhi",
+    "mumbai": "mumbai", "bombay": "mumbai",
+    "chennai": "chennai", "madras": "chennai",
+    "kolkata": "kolkata", "calcutta": "kolkata",
+    "ahmedabad": "ahmedabad", "ahmadabad": "ahmedabad",
+    "jaipur": "jaipur",
+    "kochi": "kochi", "cochin": "kochi",
+    "gurugram": "gurugram", "gurgaon": "gurugram",
+    "amritsar": "amritsar",
+    "patna": "patna",
+    "srinagar": "srinagar",
+    "varanasi": "varanasi", "banaras": "varanasi", "kashi": "varanasi",
+    "darjeeling": "darjeeling",
+    "ooty": "ooty", "udagamandalam": "ooty",
+}
+
+def extract_city(text):
+    """Extract known city or alias from natural language query."""
+    text_lower = text.lower()
+    for alias, canonical in sorted(CITY_ALIASES.items(), key=lambda x: -len(x[0])):
+        pattern = r"\b" + re.escape(alias) + r"\b"
+        if re.search(pattern, text_lower):
+            return canonical
+    return None
+
+def extract_date(text):
+    """Extract ISO date string from natural language expressions."""
+    text_lower = text.lower()
+    today = pd.Timestamp.now()
+    
+    if re.search(r"\btoday\b", text_lower):
+        return today.strftime("%Y-%m-%d")
+    if re.search(r"\btomorrow\b", text_lower):
+        return (today + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
+    if re.search(r"\bday after tomorrow\b", text_lower):
+        return (today + pd.Timedelta(days=2)).strftime("%Y-%m-%d")
+    
+    m_in_days = re.search(r"\bin\s+(\d+)\s+days?\b", text_lower)
+    if m_in_days:
+        days = int(m_in_days.group(1))
+        return (today + pd.Timedelta(days=days)).strftime("%Y-%m-%d")
+        
+    if re.search(r"\bnext week\b", text_lower):
+        return (today + pd.Timedelta(days=7)).strftime("%Y-%m-%d")
+    if re.search(r"\bnext month\b", text_lower):
+        return (today + pd.Timedelta(days=30)).strftime("%Y-%m-%d")
+        
+    # ISO date: YYYY-MM-DD
+    m_iso = re.search(r"\b(\d{4})[-/](\d{1,2})[-/](\d{1,2})\b", text_lower)
+    if m_iso:
+        try:
+            return pd.to_datetime(m_iso.group(0)).strftime("%Y-%m-%d")
+        except Exception:
+            pass
+
+    month_regex = r"(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)"
+    
+    # Format: "november 17th", "nov 17", "nov 17 2026"
+    m_md = re.search(r"\b(" + month_regex + r")\s+(\d{1,2})(?:st|nd|rd|th)?(?:\s*,?\s*(\d{4}))?\b", text_lower)
+    if m_md:
+        mon_str, day_str, yr_str = m_md.group(1), m_md.group(2), m_md.group(3)
+        year = int(yr_str) if yr_str else today.year
+        try:
+            dt = pd.to_datetime(f"{mon_str} {day_str} {year}")
+            if not yr_str and dt < today - pd.Timedelta(days=60):
+                dt = pd.to_datetime(f"{mon_str} {day_str} {year + 1}")
+            return dt.strftime("%Y-%m-%d")
+        except Exception:
+            pass
+
+    # Format: "17th november", "17 nov 2026"
+    m_dm = re.search(r"\b(\d{1,2})(?:st|nd|rd|th)?\s+(" + month_regex + r")(?:\s*,?\s*(\d{4}))?\b", text_lower)
+    if m_dm:
+        day_str, mon_str, yr_str = m_dm.group(1), m_dm.group(2), m_dm.group(3)
+        year = int(yr_str) if yr_str else today.year
+        try:
+            dt = pd.to_datetime(f"{day_str} {mon_str} {year}")
+            if not yr_str and dt < today - pd.Timedelta(days=60):
+                dt = pd.to_datetime(f"{day_str} {mon_str} {year + 1}")
+            return dt.strftime("%Y-%m-%d")
+        except Exception:
+            pass
+
+    return None
 
 @app.route("/")
 def index():
@@ -107,30 +199,47 @@ def chat():
     extracted_location = session.get("current_location")
     extracted_date = session.get("current_date")
 
-    # Extract location and date using LLM if available
-    if chat_model:
-        try:
-            extraction_prompt = f"""
-            Extract location and date from this user query as JSON.
-            Return JSON exactly in the form: {{ "location": "<city or null>", "date": "<YYYY-MM-DD or null>" }}
-            User query: \"{user_input}\"
-            """
-            extraction_response = chat_model.generate_content(extraction_prompt)
-            match = re.search(r"\{[\s\S]*\}", extraction_response.text.strip())
-            if match:
-                parsed = json.loads(match.group(0))
-                loc = parsed.get("location")
-                if loc and isinstance(loc, str) and loc.strip().lower() != "null":
-                    extracted_location = loc.strip()
-                dt = parsed.get("date")
-                if dt and isinstance(dt, str) and dt.strip().lower() != "null":
-                    iso = pd.to_datetime(dt, dayfirst=False, errors="coerce")
-                    if not pd.isna(iso):
-                        extracted_date = iso.strftime("%Y-%m-%d")
-            session["current_location"] = extracted_location
-            session["current_date"] = extracted_date
-        except Exception:
-            pass
+    # Step 1: Robust local NLP extraction
+    found_city = extract_city(user_input)
+    found_date = extract_date(user_input)
+    if found_city:
+        session["current_location"] = found_city
+    if found_date:
+        session["current_date"] = found_date
+
+    extracted_location = session.get("current_location")
+    extracted_date = session.get("current_date")
+
+    # Step 2: Handle greetings
+    greeting_triggers = {"hi", "hello", "hey", "hola", "namaste", "good morning", "good afternoon", "good evening", "howdy", "greetings"}
+    if user_lower in greeting_triggers or re.match(r"^(hi|hello|hey)\b", user_lower):
+        reply = (
+            "Hello! 👋 I'm your Weather Foreseen assistant by Team The Crucibles.\n\n"
+            "I can provide verified NASA satellite records (1985–2025) and future SARIMAX machine learning forecasts for 15+ Indian cities.\n\n"
+            "Try asking me:\n"
+            "• 'Weather in Mumbai on November 17th'\n"
+            "• 'Forecast for Bengaluru tomorrow'\n"
+            "• 'How accurate are the predictions?'"
+        )
+        session["conversation_history"] += f"Assistant: {reply}\n"
+        return jsonify({"reply": reply})
+
+    # Step 3: Handle accuracy questions
+    if any(w in user_lower for w in ("accuracy", "how accurate", "reliable", "how reliable", "rmse", "mae", "precision", "error")):
+        reply = (
+            "📊 System Accuracy & Evaluation Metrics:\n\n"
+            "• Temperature Accuracy: 93.4% – 97.0% across Indian cities (validated against 40 years of daily NASA POWER satellite observations).\n"
+            "  - Bengaluru: MAE 0.97°C | MAPE 4.15% (~95.9% accuracy)\n"
+            "  - Mumbai: MAE 1.02°C | MAPE 3.86% (~96.1% accuracy)\n"
+            "  - Delhi: MAE 1.56°C | MAPE 6.60% (~93.4% accuracy)\n"
+            "  - Chennai: MAE 0.84°C | MAPE 3.03% (~97.0% accuracy)\n"
+            "  - Kolkata: MAE 1.14°C | MAPE 4.75% (~95.3% accuracy)\n\n"
+            "• Precipitation Classification: 75%–85% accuracy on dry vs. wet weather events.\n"
+            "• Historical Ground Truth: 100% verified NASA satellite observations for dates between 1985 and 2025.\n"
+            "• ML Pipeline: Seasonal SARIMAX(1, 1, 1) with 365-day Fourier cyclical harmonics, falling back to 40-year climatological baselines when needed."
+        )
+        session["conversation_history"] += f"Assistant: {reply}\n"
+        return jsonify({"reply": reply})
 
     # Quick contextual memory answers
     if "date" in user_lower and any(w in user_lower for w in ("ask", "asked", "just", "which", "what", "did", "previous", "last")):
@@ -160,7 +269,7 @@ def chat():
         return jsonify({"reply": reply})
 
     forecast_text = ""
-    if extracted_location and extracted_date:
+    if extracted_location and extracted_date and (found_city or found_date or any(w in user_lower for w in ("weather", "forecast", "temp", "rain", "predict", "hot", "cold"))):
         try:
             target_date = pd.to_datetime(extracted_date)
             norm_city = normalize_city_name(extracted_location)
@@ -192,30 +301,58 @@ def chat():
             else:
                 precip = 0.0
 
-            if temp >= 35: feeling = "It will feel very hot."
-            elif temp >= 28: feeling = "It will feel warm."
-            elif temp >= 20: feeling = "It will feel pleasant."
-            else: feeling = "It will feel cool."
+            if temp >= 35: feeling = "Very hot conditions"
+            elif temp >= 28: feeling = "Warm and pleasant"
+            elif temp >= 20: feeling = "Mild and comfortable"
+            else: feeling = "Cool weather"
 
-            if precip >= 10: rain_feel = "Expect heavy rainy conditions."
-            elif precip >= 4: rain_feel = "Expect moderate rain."
-            elif precip > 0.1: rain_feel = "Light rain is possible."
-            else: rain_feel = "It should remain dry."
+            if precip >= 10: rain_feel = "Heavy rain expected"
+            elif precip >= 4: rain_feel = "Moderate rain expected"
+            elif precip > 0.1: rain_feel = "Light showers possible"
+            else: rain_feel = "Dry conditions"
 
-            mode_label = "Historical NASA Observation" if method == "historical_actual" else "Forecast Prediction"
+            base_humidity = 55 + (precip * 2.5) - ((temp - 24) * 0.7)
+            humidity = max(25, min(round(base_humidity, 1), 98))
+
+            mode_label = "Historical NASA Satellite Record" if method == "historical_actual" else "SARIMAX Forecast Prediction"
+            method_display = {
+                "sarimax_model": "SARIMAX Machine Learning Engine",
+                "historical_actual": "Actual NASA Satellite Observation (POWER Telemetry)",
+                "seasonal_fallback": "40-Year Climatological Seasonal Baseline"
+            }.get(method, "Predictive Engine")
+
+            loc_title = extracted_location.title()
             forecast_text = (
-                f"[{mode_label}] {extracted_location.title()} on {extracted_date}: "
-                f"Temperature {round(temp, 2)}°C, Rain: {round(precip, 2)} mm. {feeling} {rain_feel}"
+                f"🌤️ **{mode_label}**\n\n"
+                f"📍 **Location**: {loc_title}\n"
+                f"📅 **Date**: {extracted_date}\n"
+                f"🌡️ **Temperature**: {round(temp, 1)}°C ({feeling})\n"
+                f"🌧️ **Precipitation**: {round(precip, 2)} mm ({rain_feel})\n"
+                f"💧 **Estimated Humidity**: {humidity}%\n"
+                f"⚙️ **Engine**: {method_display}"
             )
             session["last_forecast"] = {"text": forecast_text, "temp": temp, "precip": precip, "date": extracted_date, "location": extracted_location}
-            session["current_location"] = extracted_location
-            session["current_date"] = extracted_date
         except Exception as e:
-            forecast_text = f"Forecast note: {e}"
+            forecast_text = f"Notice while generating forecast for {extracted_location}: {e}"
             session["last_forecast"] = {"text": forecast_text}
 
+    # If user provided only city but no date
+    if found_city and not extracted_date:
+        reply = f"Got {found_city.title()}! 📍 Which date would you like the forecast for? (e.g., 'tomorrow', 'November 17', or '2026-12-25')"
+        session["conversation_history"] += f"Assistant: {reply}\n"
+        return jsonify({"reply": reply})
+
+    # If user provided only date but no city
+    if found_date and not extracted_location:
+        reply = f"I noted the date {found_date}! 📅 Which city would you like to check? (Available: Bengaluru, Delhi, Mumbai, Chennai, Kolkata, Jaipur, Kochi, and more)"
+        session["conversation_history"] += f"Assistant: {reply}\n"
+        return jsonify({"reply": reply})
+
+    # Return forecast or AI-enhanced response
     ai_reply = ""
-    if chat_model:
+    if forecast_text:
+        ai_reply = forecast_text
+    elif chat_model:
         response_prompt = f"""
         You are the Weather Foreseen AI assistant by Team The Crucibles (built for NASA Space Apps Challenge 2025, our first hackathon!).
         Keep replies concise, friendly, and accurate.
@@ -226,12 +363,23 @@ def chat():
         """
         try:
             response = chat_model.generate_content(response_prompt)
-            ai_text = response.text.strip()
-            ai_reply = f"{forecast_text}\n{ai_text}".strip() if forecast_text else ai_text
+            ai_reply = response.text.strip()
         except Exception:
-            ai_reply = forecast_text or "I can provide forecasts for 15+ Indian cities. Try asking: 'Weather in Mumbai on Dec 25'!"
+            ai_reply = (
+                "I can provide historical records and future AI forecasts for 15+ Indian cities!\n\n"
+                "Try asking:\n"
+                "• 'Weather in Mumbai on November 17th'\n"
+                "• 'Forecast for Bengaluru tomorrow'\n"
+                "• 'How accurate are the predictions?'"
+            )
     else:
-        ai_reply = forecast_text or "Please provide a city and date (e.g. 'Bengaluru next month')."
+        ai_reply = (
+            "I can provide historical records and future AI forecasts for 15+ Indian cities!\n\n"
+            "Try asking:\n"
+            "• 'Weather in Mumbai on November 17th'\n"
+            "• 'Forecast for Bengaluru tomorrow'\n"
+            "• 'How accurate are the predictions?'"
+        )
 
     session["conversation_history"] += f"Assistant: {ai_reply}\n"
     return jsonify({"reply": ai_reply})
