@@ -5,14 +5,28 @@ import google.generativeai as genai
 from weather_predictor import load_and_preprocess_data, train_model, forecast_for_date, will_it_rain
 import pandas as pd
 
-app = Flask(__name__)
-app.secret_key = "your-secret-key"  
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+app = Flask(
+    __name__,
+    template_folder=os.path.join(BASE_DIR, "templates"),
+    static_folder=os.path.join(BASE_DIR, "static"),
+)
+app.secret_key = os.getenv("SECRET_KEY", "weather-forseen-secret-key")
 
 CORS(app)
 
-os.environ["GENAI_API_KEY"] = "AIzaSyCQx08C1YOYiw7Q8AaBxChwmIng02LSi4Q"
-api_key = os.getenv("GENAI_API_KEY")
-genai.configure(api_key=api_key)
+# Optional dotenv support
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
+api_key = os.getenv("GENAI_API_KEY", "AIzaSyCQx08C1YOYiw7Q8AaBxChwmIng02LSi4Q")
+if api_key:
+    genai.configure(api_key=api_key)
+
 try:
     chat_model = genai.GenerativeModel("gemini-2.5-flash")
 except Exception:

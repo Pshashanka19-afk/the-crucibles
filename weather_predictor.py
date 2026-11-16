@@ -11,9 +11,36 @@ warnings.filterwarnings("ignore", message="No supported index is available. Pred
 warnings.filterwarnings("ignore", message="A date index has been provided, but it has no associated frequency information and so will be ignored when e.g. forecasting.")
 warnings.filterwarnings("ignore", message="Maximum Likelihood optimization failed to converge. Check mle_retvals.")
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, "data")
+
+def resolve_data_path(file_path):
+    """
+    Resolves data file path by checking:
+    1. Direct path as provided
+    2. In data/ directory relative to this script
+    3. In data/ directory relative to current working directory
+    """
+    if os.path.exists(file_path):
+        return file_path
+    
+    candidate = os.path.join(DATA_DIR, os.path.basename(file_path))
+    if os.path.exists(candidate):
+        return candidate
+    
+    candidate_rel = os.path.join("data", os.path.basename(file_path))
+    if os.path.exists(candidate_rel):
+        return candidate_rel
+
+    return file_path
+
 def load_and_preprocess_data(file_path):
+    file_path = resolve_data_path(file_path)
     if not os.path.exists(file_path):
-        raise FileNotFoundError(f"JSON file not found: {file_path}. Please ensure the file exists and is named correctly.")
+        raise FileNotFoundError(
+            f"JSON file not found: {file_path}. Checked current directory and {DATA_DIR}. "
+            "Please ensure the file exists and is named correctly."
+        )
 
     with open(file_path, 'r') as f:
         data = json.load(f)

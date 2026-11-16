@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weather Forseen</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="icon" type="image/svg+xml" href="thecrucibles.svg">
+    <link rel="icon" type="image/svg+xml" href="/static/thecrucibles.svg">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
@@ -1305,6 +1305,9 @@
     });
   }
 
+  // ====== API Base URL Configuration ======
+  const API_BASE = window.location.origin.startsWith('http') ? '' : 'http://127.0.0.1:5000';
+
   // ====== Prediction Logic ======
   const predictBtn = document.getElementById('predict-btn');
   const resultsContainer = document.getElementById('prediction-results-container');
@@ -1324,7 +1327,7 @@
     document.getElementById('rain-verdict').textContent = "Loading...";
 
     try {
-      const response = await fetch('http://127.0.0.1:5000/predict', {
+      const response = await fetch(`${API_BASE}/predict`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ city: cityInput, date: dateInput })
@@ -1488,7 +1491,7 @@
     chatInput.value = "";
 
     try {
-      const res = await fetch("http://127.0.0.1:5000/chat", {
+      const res = await fetch(`${API_BASE}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: userMessage }),
