@@ -422,6 +422,119 @@
             font-family: inherit;
         }
 
+        /* Hackathon Badge Styles */
+        .hackathon-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            background: rgba(90, 122, 241, 0.12);
+            border: 1px solid rgba(90, 122, 241, 0.35);
+            border-radius: 50px;
+            font-size: 0.9em;
+            font-weight: 600;
+            color: var(--accent-color);
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(90, 122, 241, 0.1);
+            letter-spacing: 0.3px;
+        }
+        .hackathon-badge i {
+            color: #ff9800;
+        }
+
+        .hackathon-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #ff9800;
+            color: white;
+            font-size: 0.8em;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Quick City and Date Selectors */
+        .quick-selectors-wrapper {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .city-chips-container, .quick-dates-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+            max-width: 700px;
+        }
+        .selector-label {
+            font-size: 0.85em;
+            font-weight: 600;
+            color: var(--text-secondary);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .city-chip {
+            background: var(--card-bg);
+            border: 1px solid rgba(90, 122, 241, 0.3);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-primary);
+            font-family: inherit;
+        }
+        .city-chip:hover {
+            background: var(--accent-color);
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .date-chip {
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            color: var(--text-secondary);
+            font-family: inherit;
+        }
+        .date-chip:hover {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        /* Pipeline Status Bar */
+        .pipeline-status-bar {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(90, 122, 241, 0.08);
+            border-radius: 12px;
+            padding: 10px 16px;
+            font-size: 0.9em;
+            border: 1px solid rgba(90, 122, 241, 0.2);
+            margin-bottom: 10px;
+        }
+        .pipeline-method-tag {
+            font-weight: 600;
+            color: var(--accent-color);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
         .download-dropdown-container {
             position: relative;
             display: none; /* Hidden by default */
@@ -989,6 +1102,9 @@
     <main id="app-content">
         <section id="hero-section" class="content-section active">
             <div class="hero-text-container">
+                <div class="hackathon-badge">
+                    <i class="fas fa-rocket"></i> NASA Space Apps Challenge 2025 &bull; Team's 1st Hackathon
+                </div>
                 <h1>Plan Your Future with Confidence</h1>
                 <p>Our website gives you the best experience to know about future weather so you can make your plans comfortably.</p>
                 <button class="btn-primary" id="start-planning-btn">Start Planning <i class="fas fa-arrow-right"></i></button>
@@ -1034,14 +1150,54 @@
                 <h2>Predict Weather for a Future Date</h2>
                 <div class="prediction-controls">
                     <div class="search-location">
-                        <input type="text" placeholder="Select a location in the world...">
+                        <input type="text" id="location-input" list="city-list" placeholder="Select or type a city (e.g. Bengaluru, Delhi)...">
+                        <datalist id="city-list">
+                            <option value="Bengaluru">
+                            <option value="Delhi">
+                            <option value="Mumbai">
+                            <option value="Chennai">
+                            <option value="Kolkata">
+                            <option value="Ahmedabad">
+                            <option value="Jaipur">
+                            <option value="Kochi">
+                            <option value="Gurugram">
+                            <option value="Amritsar">
+                            <option value="Patna">
+                            <option value="Srinagar">
+                            <option value="Varanasi">
+                            <option value="Darjeeling">
+                            <option value="Ooty">
+                        </datalist>
                         <button id="predict-btn"><i class="fas fa-paper-plane"></i></button>
                     </div>
                     <div class="date-selector">
-                        <input type="date">
+                        <input type="date" id="target-date-input">
+                    </div>
+                </div>
+                <div class="quick-selectors-wrapper">
+                    <div class="city-chips-container">
+                        <span class="selector-label"><i class="fas fa-map-pin"></i> Cities:</span>
+                        <button type="button" class="city-chip" data-city="Bengaluru">Bengaluru</button>
+                        <button type="button" class="city-chip" data-city="Delhi">Delhi</button>
+                        <button type="button" class="city-chip" data-city="Mumbai">Mumbai</button>
+                        <button type="button" class="city-chip" data-city="Chennai">Chennai</button>
+                        <button type="button" class="city-chip" data-city="Kolkata">Kolkata</button>
+                        <button type="button" class="city-chip" data-city="Jaipur">Jaipur</button>
+                        <button type="button" class="city-chip" data-city="Darjeeling">Darjeeling</button>
+                    </div>
+                    <div class="quick-dates-container">
+                        <span class="selector-label"><i class="fas fa-calendar-alt"></i> Preset:</span>
+                        <button type="button" class="date-chip" data-days="1">Tomorrow</button>
+                        <button type="button" class="date-chip" data-days="7">+7 Days</button>
+                        <button type="button" class="date-chip" data-days="30">+1 Month</button>
+                        <button type="button" class="date-chip" data-days="90">+3 Months</button>
                     </div>
                 </div>
                 <div class="prediction-results" id="prediction-results-container">
+                    <div class="pipeline-status-bar" id="pipeline-status-bar">
+                        <span><i class="fas fa-satellite"></i> Pipeline Engine:</span>
+                        <span class="pipeline-method-tag" id="pipeline-method-display">SARIMAX Statistical Model</span>
+                    </div>
                     <div class="result-item rain-prediction">
                         <h4>Rain Prediction</h4>
                         <div class="rain-chance">
@@ -1124,28 +1280,29 @@
 
         <section id="about-section" class="content-section">
             <div class="about-header">
-                <h2>About Us</h2>
-                <p>Learn more about The Crucibles team.</p>
+                <h2>About Us & Our Hackathon Journey</h2>
+                <p>Team The Crucibles &bull; NASA International Space Apps Challenge 2025</p>
             </div>
             <div class="about-content-container">
                 <div class="contact-card mission-card">
-                    <h3>Our Mission</h3>
-                    <p>The Crucibles is dedicated to providing the most accurate and reliable weather forecasting service to help people plan their lives with confidence.</p>
-                    <p>Our advanced prediction algorithms and AI-powered insights enable users to access detailed weather forecasts up to one year in advance for any location worldwide.</p>
-                    <p>We believe that better weather information leads to better decisions, whether you're planning a vacation, organizing an outdoor event, or simply deciding what to wear tomorrow.</p>
+                    <div class="hackathon-tag"><i class="fas fa-trophy"></i> Our 1st Ever Hackathon</div>
+                    <h3>The Crucibles at NASA Space Apps 2025</h3>
+                    <p>Weather Foreseen was conceived, architected, and built by team <strong>The Crucibles</strong> during the <strong>NASA International Space Apps Challenge 2025</strong>. This was our team's very first hackathon!</p>
+                    <p>Faced with the challenge of transforming complex planetary satellite data into everyday utility, we tapped into 40 years of daily solar, temperature, and precipitation measurements from the NASA POWER API. By marrying SARIMAX time-series statistical forecasting with Google Gemini AI natural language synthesis, we built a platform where anyone can query upcoming or historical weather with simple conversation.</p>
+                    <p>During the hackathon, we navigated real-world data science challenges—such as handling convergence over 14,000 daily observations, non-linear monsoon distributions, and web pipeline optimization—yielding a resilient, production-ready system.</p>
                 </div>
                 <div class="values-container">
                     <div class="contact-card">
-                        <h3>Accuracy</h3>
-                        <p>We use cutting-edge meteorological models to deliver the most precise forecasts.</p>
+                        <h3><i class="fas fa-satellite-dish"></i> NASA Satellite Telemetry</h3>
+                        <p>Decades of real surface meteorology from NASA POWER API across major Indian cities.</p>
                     </div>
                     <div class="contact-card">
-                        <h3>Innovation</h3>
-                        <p>AI-powered predictions and real-time data analysis for superior insights.</p>
+                        <h3><i class="fas fa-brain"></i> Dual ML + AI Engine</h3>
+                        <p>Combining SARIMAX seasonal statistical modeling with Google Gemini conversational intelligence.</p>
                     </div>
                     <div class="contact-card">
-                        <h3>Reliability</h3>
-                        <p>24/7 availability with consistent updates and dependable service.</p>
+                        <h3><i class="fas fa-rocket"></i> First Hackathon Milestone</h3>
+                        <p>Built with passion, late-night debugging, and rapid innovation by team The Crucibles.</p>
                     </div>
                 </div>
             </div>
@@ -1308,14 +1465,57 @@
   // ====== API Base URL Configuration ======
   const API_BASE = window.location.origin.startsWith('http') ? '' : 'http://127.0.0.1:5000';
 
+  // ====== Load Dynamic Cities List ======
+  async function loadAvailableCities() {
+    try {
+      const res = await fetch(`${API_BASE}/cities`);
+      const data = await res.json();
+      const datalist = document.getElementById('city-list');
+      if (datalist && data.cities && data.cities.length > 0) {
+        datalist.innerHTML = '';
+        data.cities.forEach(city => {
+          const opt = document.createElement('option');
+          opt.value = city;
+          datalist.appendChild(opt);
+        });
+      }
+    } catch (e) {
+      console.warn("Could not fetch /cities endpoint:", e);
+    }
+  }
+  loadAvailableCities();
+
+  // ====== City & Date Chips Event Listeners ======
+  document.querySelectorAll('.city-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const cityInput = document.getElementById('location-input');
+      if (cityInput) {
+        cityInput.value = chip.getAttribute('data-city') || chip.textContent.trim();
+        cityInput.focus();
+      }
+    });
+  });
+
+  document.querySelectorAll('.date-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const days = parseInt(chip.getAttribute('data-days') || '1', 10);
+      const d = new Date();
+      d.setDate(d.getDate() + days);
+      const dateInput = document.getElementById('target-date-input');
+      if (dateInput) {
+        dateInput.value = d.toISOString().split('T')[0];
+      }
+    });
+  });
+
   // ====== Prediction Logic ======
   const predictBtn = document.getElementById('predict-btn');
   const resultsContainer = document.getElementById('prediction-results-container');
   const downloadContainer = document.getElementById('download-container');
 
   predictBtn.addEventListener('click', async () => {
-    const cityInput = document.querySelector('.search-location input').value.trim();
-    const dateInput = document.querySelector('.date-selector input').value.trim();
+    const cityInput = (document.getElementById('location-input') || document.querySelector('.search-location input')).value.trim();
+    const dateInput = (document.getElementById('target-date-input') || document.querySelector('.date-selector input')).value.trim();
 
     if (!cityInput || !dateInput) {
       alert("Please enter both city and date!");
@@ -1324,7 +1524,7 @@
 
     downloadContainer.classList.remove('visible'); // Hide on new prediction
     resultsContainer.classList.add('visible');
-    document.getElementById('rain-verdict').textContent = "Loading...";
+    document.getElementById('rain-verdict').textContent = "Running SARIMAX Forecasting Engine...";
 
     try {
       const response = await fetch(`${API_BASE}/predict`, {
@@ -1335,28 +1535,34 @@
       const data = await response.json();
 
       if (data.error) {
-        document.getElementById('rain-verdict').textContent = "Error: " + data.error;
-        resultsContainer.classList.remove('visible');
+        document.getElementById('rain-verdict').textContent = "Notice: " + data.error;
+        document.getElementById('rain-percentage').textContent = "--";
+        resultsContainer.classList.add('visible');
         return;
       }
 
-      const rainText = data.rain_chance || "Unknown";
       const temp = data.temperature || 0;
       const humidity = data.humidity || 0;
       const rainfall = data.rainfall || 0;
 
-      document.getElementById('rain-percentage').textContent =
-        rainText.includes("Yes") ? "80%" : "20%";
-      document.getElementById('rain-verdict').textContent = rainText;
+      // Update Pipeline Engine Badge
+      const methodDisplay = document.getElementById('pipeline-method-display');
+      if (methodDisplay) {
+        methodDisplay.textContent = data.pipeline_method || "SARIMAX Statistical Model";
+      }
+
+      // Update metric cards
+      document.getElementById('rain-percentage').textContent = data.rain_chance || (data.will_rain === "Yes" ? "80%" : "20%");
+      document.getElementById('rain-verdict').textContent = data.rain_details || (data.will_rain === "Yes" ? "Rain Likely" : "Dry Weather");
 
       document.getElementById('humidity-bar').style.width = `${humidity}%`;
       document.getElementById('humidity-label').textContent = `${humidity}%`;
 
-      const tempPercentage = (temp / 50) * 100;
+      const tempPercentage = Math.min(Math.max((temp / 50) * 100, 5), 100);
       document.getElementById('temp-bar').style.width = `${tempPercentage}%`;
       document.getElementById('temp-label').textContent = `${temp}°C`;
 
-      const rainfallPercentage = (rainfall / 50) * 100;
+      const rainfallPercentage = Math.min(Math.max((rainfall / 50) * 100, rainfall > 0 ? 5 : 0), 100);
       document.getElementById('rainfall-bar').style.width = `${rainfallPercentage}%`;
       document.getElementById('rainfall-label').textContent = `${rainfall}mm`;
 
@@ -1364,7 +1570,7 @@
       downloadContainer.classList.add('visible');
 
     } catch (err) {
-      document.getElementById('rain-verdict').textContent = "Server Error: " + err.message;
+      document.getElementById('rain-verdict').textContent = "Server Connection Error: " + err.message;
       resultsContainer.classList.remove('visible');
     }
   });
