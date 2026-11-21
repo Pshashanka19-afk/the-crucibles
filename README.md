@@ -20,7 +20,7 @@
 
 ---
 
-## 🌟 The Hackathon Journey
+##  The Hackathon Journey
 
 **Weather Foreseen** was conceived, architected, and built during the **NASA International Space Apps Challenge 2025**. For our team, **The Crucibles**, this was our very first hackathon experience! 
 
@@ -34,7 +34,7 @@ We set out to bridge this gap by building a complete end-to-end weather forecast
 
 ---
 
-## 🧠 System Architecture & Pipeline Deep Dive
+##  System Architecture & Pipeline Deep Dive
 
 The platform is designed around a multi-stage data science and natural language pipeline:
 
@@ -66,7 +66,7 @@ flowchart TD
 
 ---
 
-## ⚠️ Pipeline Challenges & Engineering Solutions
+##  Pipeline Challenges & Engineering Solutions
 
 During our first hackathon, we encountered real-world engineering hurdles with scientific time-series modeling. Here is a transparent breakdown of **why the pipeline sometimes struggled** and the **engineering solutions implemented to stabilize it**:
 
@@ -99,7 +99,7 @@ During our first hackathon, we encountered real-world engineering hurdles with s
 
 ---
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```text
 the-crucibles/
@@ -144,7 +144,7 @@ the-crucibles/
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### 1. Prerequisites
 - Python 3.9+ (Python 3.10 to 3.13 recommended)
@@ -235,7 +235,7 @@ http://127.0.0.1:5000/
 
 ---
 
-## 🛰️ Fetching New NASA Datasets
+##  Fetching New NASA Datasets
 
 To download fresh weather datasets from NASA POWER for any global coordinates:
 
@@ -245,8 +245,8 @@ python scripts/fetch_nasa_data.py --lat 28.61 --lon 77.20 --start 19850101 --end
 
 ---
 
-## 👥 Authors & Acknowledgments
+##  Authors & Acknowledgments
 
-- **Team The Crucibles**
+- **Team: The Crucibles**
 - Built for the **NASA International Space Apps Challenge 2025** (First Hackathon Milestone 🚀)
 - Data provided by the **[NASA POWER Project](https://power.larc.nasa.gov/)** (Prediction of Worldwide Energy Resources)
