@@ -1,24 +1,6 @@
-# Weather Foreseen 🌦️
+# Weather Foreseen 
 
-<p align="center">
-  <img src="static/thecrucibles.svg" alt="Weather Foreseen Logo" width="110"/>
-</p>
 
-<p align="center">
-  <strong>An Intelligent Meteorological Forecasting & Conversational Platform</strong><br>
-  Built by Team <b>The Crucibles</b> for the <b>NASA International Space Apps Challenge 2025</b><br>
-  <em>🎉 Milestone: Our Team's First-Ever Hackathon! 🎉</em>
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Hackathon-NASA%20Space%20Apps%202025-blue?style=for-the-badge&logo=nasa" alt="NASA Space Apps 2025"/>
-  <img src="https://img.shields.io/badge/Team-The%20Crucibles-orange?style=for-the-badge" alt="The Crucibles"/>
-  <img src="https://img.shields.io/badge/Milestone-1st%20Hackathon%20Project-success?style=for-the-badge" alt="1st Hackathon"/>
-  <img src="https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python" alt="Python"/>
-  <img src="https://img.shields.io/badge/Framework-Flask%20%7C%20SARIMAX-purple?style=for-the-badge" alt="Flask SARIMAX"/>
-</p>
-
----
 
 ##  The Hackathon Journey
 
